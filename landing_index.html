@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Programa Nacional de Extensión Forestal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde-monte:#223A2C;
+    --tierra:#8A5A34;
+    --papel:#F1EFE4;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background:var(--papel);
+    color:var(--verde-monte);
+    font-family:"IBM Plex Sans", Arial, sans-serif;
+  }
+  body{
+    min-height:100vh;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:48px 24px;
+    text-align:center;
+  }
+  .marca{
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    font-size:.78rem;
+    font-weight:600;
+    color:var(--tierra);
+    margin-bottom:14px;
+  }
+  h1{
+    font-family:"Fraunces", Georgia, serif;
+    font-weight:600;
+    font-size:clamp(1.8rem, 4vw, 2.8rem);
+    line-height:1.15;
+    margin:0 0 12px;
+    max-width:16ch;
+  }
+  .bajada{
+    max-width:52ch;
+    color:#3d4f41;
+    font-size:1rem;
+    line-height:1.5;
+    margin:0 0 44px;
+  }
+  .botones{
+    display:flex; flex-wrap:wrap;
+    gap:20px;
+    justify-content:center;
+    width:100%;
+    max-width:760px;
+  }
+  .boton{
+    flex:1 1 280px;
+    text-decoration:none;
+    color:var(--papel);
+    background:var(--verde-monte);
+    border-radius:14px;
+    padding:28px 26px;
+    text-align:left;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 4px 0 rgba(0,0,0,.08);
+  }
+  .boton:hover, .boton:focus-visible{
+    transform:translateY(-3px);
+    box-shadow:0 8px 16px rgba(34,58,44,.25);
+  }
+  .boton .icono{
+    font-size:1.6rem;
+    display:block;
+    margin-bottom:10px;
+  }
+  .boton .titulo{
+    font-family:"Fraunces", Georgia, serif;
+    font-weight:600;
+    font-size:1.25rem;
+    display:block;
+    margin-bottom:6px;
+  }
+  .boton .desc{
+    font-size:.9rem;
+    opacity:.85;
+    line-height:1.4;
+  }
+  .boton.tierra{ background:var(--tierra); }
+  footer{
+    margin-top:56px;
+    font-size:.8rem;
+    color:#6b7a6e;
+  }
+</style>
+</head>
+<body>
+  <div class="marca">Coordinación de Bosques Nativos</div>
+  <h1>Programa Nacional de Extensión Forestal</h1>
+  <p class="bajada">Herramientas internas de gestión y seguimiento del programa.</p>
+
+  <div class="botones">
+    <a class="boton" href="ures/">
+      <span class="icono">🗺️</span>
+      <span class="titulo">Información Unidades Regionales</span>
+      <span class="desc">Mapa de las 8 URE: provincias, equipo y vehículos asignados a cada regional.</span>
+    </a>
+    <a class="boton tierra" href="monitoreo/">
+      <span class="icono">📋</span>
+      <span class="titulo">Monitoreo de Planes</span>
+      <span class="desc">Seguimiento de planes de manejo por provincia y año, con carga de nuevos monitoreos.</span>
+    </a>
+  </div>
+
+  <footer>ProNEFor · Dirección de Bosques Nativos · Ley 26.331</footer>
+</body>
+</html>
