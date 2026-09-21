@@ -302,6 +302,17 @@
       }
     });
 
+    // Las Islas Malvinas son parte de la provincia de Tierra del Fuego,
+    // Antártida e Islas del Atlántico Sur — se pintan del mismo color que
+    // esa URE; no tienen fila propia en la hoja de Regionales.
+    if(MAPA_PATHS.paths["Islas Malvinas"] && provincia_ure["Tierra del Fuego"]){
+      const ureTDF = provincia_ure["Tierra del Fuego"];
+      provincia_ure["Islas Malvinas"] = ureTDF;
+      if(ureTDF !== "CENTRAL"){
+        (provinciasPorURE[ureTDF] = provinciasPorURE[ureTDF] || []).push("Islas Malvinas");
+      }
+    }
+
     const datos = {};
     const asegurarURE = (k) => {
       if(!datos[k]) datos[k] = { coordinador: null, provincias: provinciasPorURE[k] || [], personal: [], vehiculos: [] };
