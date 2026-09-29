@@ -1,0 +1,167 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#223A2C"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png">
+<title>Monitoreo de Planes · ProNEFor</title>
+<style>
+:root{--v:#223A2C;--t:#8A5A34;--p:#F1EFE4;--l:#D9D4C0}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--p);color:#1d2620;padding-bottom:84px}
+h1,h3,summary{font-family:Georgia,"Times New Roman",serif}
+header{background:var(--v);color:var(--p);padding:calc(10px + env(safe-area-inset-top)) 14px 10px;position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;flex:1}#net{font-size:12px;padding:3px 9px;border-radius:9px;background:var(--t)}
+nav{display:flex;background:var(--l)}nav button{flex:1;padding:12px;border:0;background:none;font:inherit;font-weight:600;color:var(--v)}
+nav button.on{background:var(--p);border-bottom:3px solid var(--t)}
+main{max-width:720px;margin:0 auto;padding:8px 10px}
+details{background:#fff;border:1px solid var(--l);border-radius:8px;margin:10px 0}
+summary{padding:14px;font-size:18px;font-weight:600;color:var(--v)}.body{padding:0 14px 14px}
+h3{margin:22px 0 4px;color:var(--t);font-size:16px;border-bottom:1px solid var(--l)}
+.f{margin:14px 0}.q{display:block;font-weight:600;font-size:14px;margin-bottom:5px}
+input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{width:100%;padding:11px;border:1px solid #b8b29a;border-radius:6px;font:inherit;background:#fff}
+textarea{min-height:76px}.row{display:flex;gap:8px}
+.ch{display:flex;flex-wrap:wrap;gap:6px}.ch label{border:1px solid #b8b29a;border-radius:18px;padding:8px 13px;background:#fff;font-size:15px}
+.ch input{display:none}.ch label:has(input:checked){background:var(--v);color:#fff;border-color:var(--v)}
+.b{padding:11px 14px;border:0;border-radius:6px;background:var(--t);color:#fff;font:inherit;font-weight:600}.g{background:var(--v)}.x{background:#8f2d2d}
+.pv{display:block;max-width:100%;margin-top:8px;border-radius:6px}
+.fila{border:1px solid var(--l);border-radius:6px;padding:10px;margin:8px 0;background:var(--p)}.fila>*{margin:4px 0}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--l);padding:10px 10px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:5}.bar .b{flex:1}
+.card{background:#fff;border:1px solid var(--l);border-radius:8px;padding:12px;margin:10px 0}.card .row{flex-wrap:wrap;margin-top:8px}
+.tag{font-size:12px;padding:2px 8px;border-radius:9px;background:var(--l)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;background:#000c;color:#fff;padding:10px 16px;border-radius:8px;z-index:9;max-width:90%}
+</style></head><body>
+<header><h1>Monitoreo de Planes</h1><span id="net"></span></header>
+<nav><button id="nf" class="on">Formulario</button><button id="nl">Monitoreos guardados</button></nav>
+<main><div id="form"></div><div id="list" hidden></div></main>
+<div class="bar" id="bar"><button class="b g" id="bd">Guardar borrador</button><button class="b" id="bf">Finalizar</button><button class="b x" id="bn" style="flex:0 0 auto">Nuevo</button></div>
+<div id="toast" hidden></div>
+<script>
+// ===== CONFIGURACIÓN =====
+const CFG={URL:'',CLAVE:'PRONEFOR2026'}; // URL = dirección de la implementación web de Apps Script
+// ===== ESQUEMA DEL FORMULARIO =====
+const YN=['Sí','No'],ZN=['Sí','No','NS/NC'],PA=['Presencia','Ausencia'],FI=['Formal','Informal'];
+const tx=(i,l,s)=>[i,l,'t',0,s],nu=(i,l,s)=>[i,l,'n',0,s],dt=(i,l,s)=>[i,l,'d',0,s],hr=(i,l,s)=>[i,l,'h',0,s],ar=(i,l,s)=>[i,l,'a',0,s],gp=(i,l,s)=>[i,l,'g',0,s],fo=(i,l,s)=>[i,l,'f',0,s];
+const ch=(i,l,o,s)=>[i,l,'c',o,s],mu=(i,l,o,s)=>[i,l,'m',o,s],se=(i,l,o,s)=>[i,l,'s',o,s];
+const yn=(i,l,s)=>ch(i,l,YN,s),zn=(i,l,s)=>ch(i,l,ZN,s),pa=(i,l,s)=>ch(i,l,PA,s),hd=l=>[null,l,'H'];
+const yf=(i,l,z)=>[(z?zn:yn)(i,l),ch(i+'f','Formal / informal',FI,[i,'Sí'])];
+const REG=['Yungas','Chaco semiárido','Chaco serrano','Chaco húmedo','Chaco árido','Selva Paranaense','Bosque Andino Patagónico','Monte','Espinal','Otra'];
+const PF=['Miel','Frutos del monte','Aromáticas','Medicinales','Cosméticas','Tintóreas','Fibras textiles (chaguar, palma caranday, etc.)','Ornamentales (helechos, orquídeas, cactus, palmeras, etc.)','Industrial (goma brea, etc.)','Hongos','Productos de fauna'];
+const AF='Aprovechamiento forestal (AF)',SS='Silvopastoril (SSP) y MBGI',RE='Recuperación (REC)',CO='Conservación (CON)',PN='Productos no maderables (PNMyS)';
+const IND=(p,s)=>[pa(p+'1','Presencia/ausencia de ganado o animales',s),pa(p+'2','Bosteo reciente',s),pa(p+'3','Renovales',s),pa(p+'4','Ramoneo en renovales',s),pa(p+'5','Huellas, caminos o pisadas del ganado (sobrepisoteo)',s)];
+const sitio=(n,tit)=>[hd(tit),fo('F'+n+'f','Foto panorámica'),gp('F'+n+'g','Coordenadas GPS'),ar('F'+n+'d','Descripción del sitio'),
+ yn('F'+n+'h','Suelo cubierto por hojarasca o mantillo'),pa('F'+n+'e','Herbáceo'),pa('F'+n+'s','Sotobosque'),pa('F'+n+'r','Regeneración'),pa('F'+n+'o','Dosel'),ch('F'+n+'a','Altura dominante promedio',['Menos de 3 m','Entre 3 y 7 m','Más de 7 m'])];
+const S=[
+{t:'1. Datos generales',f:[tx('1A','Código del plan en el SIIF'),tx('1B','Código/s de POA en el SIIF y año de convocatoria (separar con coma)'),
+yn('1C','¿Está cargado el plan documento?'),yn('1C1','El documento cuenta con inventario',['1C','Sí']),yn('1C2','El documento cuenta con planificación',['1C','Sí']),yn('1C3','El documento tiene indicadores de monitoreo',['1C','Sí']),
+yn('1D','¿Está cargada la cobertura en el SIIF?'),dt('1E','Fecha de monitoreo'),ch('1Es','Estación del año',['Verano','Otoño','Invierno','Primavera']),hr('1Fi','Hora de inicio'),hr('1Ff','Hora de fin'),
+tx('1G','Técnico/a ANA (nombre)'),ch('1H','Titular del plan en la recorrida',['Presente','Ausente']),tx('1I','Quién acompaña el recorrido (encargado de campo, familiar, etc.)'),
+ch('1J','Responsable Técnico del PMF',['Presente','Ausente']),tx('1Jn','Nombre y apellido del RT (verificar notificación formal)'),yn('1Jc','¿Coincide con el SIIF?'),
+ch('1K','Técnicos ALA',['Presente','Ausente']),tx('1Kn','Nombre y apellido técnicos ALA',['1K','Presente']),
+tx('1La','Localidad'),tx('1Lb','Departamento'),gp('1Lc','Coordenadas del punto de acceso (tranquera)'),se('1M','Región fitogeográfica',REG),
+ch('1N','Condiciones climáticas',['Nublado','Parcialmente nublado','Soleado','Lluvia','Nieve']),ch('1Nt','Temperatura aproximada',['Menos de 10 °C','10–20 °C','20–30 °C','Más de 30 °C']),
+nu('1O','Altitud del POA (msnm)'),tx('1P','Parcela del inventario nacional cercana (código)'),yn('1Q','¿Cae dentro del polígono del plan?')]},
+{t:'2. Actividades',f:[hd('2.A Verificación del cumplimiento del plan (por POA)'),[ 'T2A','Actividades','T'],
+mu('2B','2.B Incendios (Res. COFEMA 427/2020, art. 20; Ley 26.815)',['Actividades de prevención','Actividades de combate','No hay actividades']),
+yn('2C','2.C ¿Hubo readecuación de actividades?'),yn('2Ca','¿Fue presentada a la ALA?',['2C','Sí']),yn('2Cb','¿Está autorizada?',['2C','Sí']),
+mu('2C1','2.C.1 Motivo',['Demora en recibir los fondos','Readecuación de actividades del plan','Imprevistos climáticos','Otros'],['2C','Sí']),
+ch('2C1t','¿De cuánto tiempo fue la demora?',['6 meses a 1 año','1 año o más'],['2C1','Demora en recibir los fondos']),ar('2C2','2.C.2 Observaciones sobre la readecuación',['2C','Sí'])]},
+{t:'3.A Estado del bosque: sitios de fotos',f:[...sitio(1,'Sitio 1: bien conservado'),...sitio(2,'Sitio 2: donde se realizan las actividades'),...sitio(3,'Sitio 3 (opcional)'),...sitio(4,'Sitio 4 (opcional)')]},
+{t:'3.B Estado del bosque: predio en general',f:[
+hd('Composición florística'),tx('3B1a','Especies dominantes (o "Mixto")'),
+yn('3B1b','Especies forestales de alto valor de conservación'),tx('3B1bn','¿Cuáles? (nombre común y/o científico)',['3B1b','Sí']),
+zn('3B1c','Otras especies vegetales de alto valor de conservación'),tx('3B1cn','¿Cuáles?',['3B1c','Sí']),
+zn('3B1d','Fauna de alto valor de conservación'),tx('3B1dn','¿Cuáles?',['3B1d','Sí']),
+mu('3B1o','Fauna asociada: observación',['Directa','Huellas','Heces','Vocalizaciones','Pelos','Dormideros','Otros rastros']),
+yn('3Bav','Se realizan transectas de aves'),nu('3Bavr','Riqueza de aves',['3Bav','Sí']),nu('3Bava','Abundancia de aves',['3Bav','Sí']),
+yn('3Bab','Se realizan transectas de abejas nativas'),nu('3Babr','Riqueza de abejas',['3Bab','Sí']),nu('3Baba','Abundancia de abejas',['3Bab','Sí']),
+hd('Regeneración natural nativa'),mu('3B2a','Presencia de',['Plántulas','Brinzales','Renovales','Ninguno']),mu('3B2b','Estado',['Buen estado','Ramoneado','Quebrado (pisoteo, nieve u otro)']),
+hd('Regulación climática / almacenamiento de carbono'),yn('3Bc1','Continuidad de cobertura boscosa'),yn('3Bc2','Individuos longevos o de gran porte'),yn('3Bc3','Suelo con materia orgánica'),
+hd('Sanidad forestal'),yn('3B3','Mortalidad en masa (¿afectación significativa?)'),ar('3B3d','Detalle',['3B3','Sí']),
+hd('Alteraciones e impactos antrópicos'),...yf('3B4a','Evidencia de tala'),...yf('3B4b','Ganado dentro del bosque'),...yf('3B4c','Infraestructuras (caminos, alambrados, canales)'),...yf('3B4d','Basurales, residuos o contaminación visible'),
+yn('3B4e','Caza furtiva (cartuchos, restos en puestos)'),yn('3B4f','Incendios recientes'),ar('3B4g','Otras presiones'),
+hd('Especies exóticas invasoras'),pa('3B5a','Flora'),tx('3B5an','Especies más relevantes',['3B5a','Presencia']),pa('3B5b','Fauna'),tx('3B5bn','Especies más relevantes',['3B5b','Presencia']),
+hd('Degradación del suelo'),mu('3B6','Signos observados',['Cárcavas','Compactación','Surco','Lámina','Plantas en pedestal','Eflorescencia salina','Plantas indicadoras de degradación','Indicios de quema','Piso de arado','Sobrepisoteo']),yn('3B6i','¿Se mide el Índice de Protección Hidrológica (IPH)? (ver Manual)'),
+hd('Disponibilidad de agua'),pa('3B7a','Fuentes naturales'),tx('3B7at','Tipo (arroyo, laguna, humedal, manantial) y si es permanente o temporaria',['3B7a','Presencia']),pa('3B7ae','Signos de erosión',['3B7a','Presencia']),
+pa('3B7b','Fuentes artificiales'),ar('3B7bd','Tipo (represa, pozo somero/profundo) y usos (riego, animales, incendios, consumo humano)',['3B7b','Presencia']),
+hd('Producción actual'),yn('3B8a','Se realiza actividad forestal'),mu('3B8b','Tipo de producto',['Leña','Madera aserrada','Rollo'],['3B8a','Sí']),mu('3B8c','Tipo de manejo',['Enriquecimiento','Aprovechamiento','Tratamientos intermedios','Otras'],['3B8a','Sí']),
+yn('3B8d','Actividad ganadera no maderable'),mu('3B8e','Uso de productos forestales no maderables (PFNM)',PF),
+hd('Servicios culturales, paisajísticos y recreativos'),yn('3B9a','Uso recreativo o turístico'),tx('3B9b','Actividad (senderos, cartelería, guías interpretativas)',['3B9a','Sí']),pa('3B9c','Sitios de valor paisajístico'),pa('3B9d','Sitios de valor cultural / arqueológico'),
+ar('3B10','3.B.10 Observaciones adicionales (estado del bosque, dificultades de fiscalización, ajustes al plan, sugerencias, conclusiones)')]},
+{t:'Modalidad',f:[mu('MOD','Modalidades que se aplican en el plan',[AF,SS,RE,CO,PN])]},
+{t:'Modalidad: Aprovechamiento forestal',s:['MOD',AF],f:[yn('AF1','Se está cumpliendo la planificación'),yn('AF2','Apeo dirigido'),yn('AF3','Caminos y vías de saca con signos de erosión'),yn('AF4','Se dejaron árboles semilleros'),yn('AF5','Se respetó el DmC (opcional)'),yn('AF6','Manejo de residuos del árbol y de insumos'),ar('AF7','Observaciones')]},
+{t:'Modalidad: Silvopastoril y MBGI',s:['MOD',SS],f:[yn('SS1','Tiene división de potreros'),yn('SS2','Cuenta con área de pasturas naturales'),yn('SS3','Tiene áreas de forraje (pasturas exóticas)'),yn('SS4','Hace desarbustado'),
+ch('SS4f','Frecuencia del desarbustado',['Solo una vez','Cada 1 año','Entre 1 y 3 años','Entre 3 y 5 años','Más de 5 años'],['SS4','Sí']),ch('SS4m','Método',['Mecánico (rolo)','Manual'],['SS4','Sí']),
+yn('SS5','Hace tratamientos silvícolas'),yn('SS6','Distribución del agua en el predio'),pa('SS7','Renovales'),yn('SS8','Tiene área de exclusión (conservación)'),...IND('SS8_',['SS8','Sí'])]},
+{t:'Modalidad: Recuperación',s:['MOD',RE],f:[mu('RE1','Disturbio',['Incendio','Sobrepastoreo','Invasión de exóticas','Cambio de uso del suelo','Otros']),yn('RE2','Se hizo plantación'),ar('RE3','Estado de la plantación',['RE2','Sí']),tx('RE4','Especie',['RE2','Sí']),
+nu('RE5','Supervivencia (% vivo)',['RE2','Sí']),mu('RE6','Daño',['Ramoneado','Pisoteo','Quebradas','Enfermas','Cortadas','Quemadas','Heladas','Otros'],['RE2','Sí']),ch('RE7','Origen',['Vivero de producción propia','Compra'],['RE2','Sí']),
+mu('RE8','Tipo de manejo',['Apertura de dosel','Clausura','Anillado de exóticas invasoras','Identificación de semilleros','Liberación de árboles futuros','Protecciones individuales','Núcleos']),
+yn('RE9','Las protecciones individuales cumplieron su función',['RE8','Protecciones individuales']),yn('RE10','Monitoreo de la actividad (personal del área, productor, comunidad, otros)')]},
+{t:'Modalidad: Conservación',s:['MOD',CO],f:[...IND('CO'),...yf('CO6','Senderos'),yn('CO7','Tiene clausura'),yn('CO8','Hay control y vigilancia'),mu('CO9','Externalidades sociales',['Educación ambiental','Investigación','Turismo'])]},
+{t:'Modalidad: Productos no maderables',s:['MOD',PN],f:[mu('PN1','Producto',PF.slice(0,10)),nu('PN2','Cantidad de colmenas',['PN1','Miel']),yn('PN3','¿Hizo relevamiento para conocer la tasa de extracción?'),ch('PN4','Uso',['Propio','Comercializa']),tx('PN5','Destino')]},
+{t:'4. Aspectos sociales y económicos',f:[hd('4.A Acceso, difusión y asistencia técnica'),
+ch('4A1','¿Cómo se enteró de la convocatoria?',['ALA','Técnico privado','ONG u otras agencias','Otros productores o comunidades','ANA','NS/NC']),
+mu('4A2','¿A través de qué canales?',['Radio / TV','Diario','Redes sociales','WhatsApp','Volanteo','Visita directa','NS/NC']),
+ch('4A3','¿Tuvo dificultades al presentar el plan?',['Ninguna','Algunas','Muchas']),ar('4A3d','¿Cuáles fueron las principales?',['4A3','Algunas']),
+yn('4A4','¿Sabe en qué categoría del OTBN está el predio?'),yn('4A5','¿Conoce el objetivo del plan de manejo?'),
+ch('4A6','Vinculación con el técnico (asistencia)',['Frecuente','Intermitente','Insuficiente','No recibe asistencia']),ar('4A7','Observaciones'),
+hd('4.B Empleo y trabajo local'),yn('4B1','¿Contrató personal para las actividades?'),nu('4B2','¿Cuántas personas?',['4B1','Sí']),yn('4B3','La mano de obra es local',['4B1','Sí']),yn('4B4','¿Alguna es familia?',['4B1','Sí']),yn('4B5','Era una empresa',['4B1','Sí']),
+mu('4B6','Empleo generado',['Temporal','Permanente'],['4B1','Sí']),yn('4B7','Trabajan mujeres',['4B1','Sí']),
+hd('4.C Ingresos y actividades económicas'),yn('4C1','¿El plan mejoró ventas, comercialización o ingresos?'),ar('4C1d','¿Por qué?'),yn('4C2','¿Implementó nuevas pautas, técnicas o tecnologías?'),ar('4C2d','¿Cuáles?',['4C2','Sí']),
+hd('4.D Relación con la comunidad'),yn('4D1','¿La comunidad o vecinos participaron?'),ar('4D2','¿Se generaron beneficios compartidos (agua, caminos, recursos)?'),yn('4D3','¿Participa en organización, cooperativa o red?'),tx('4D3d','¿Cuál?',['4D3','Sí']),yn('4D4','¿Se capacitó a trabajadores o pobladores?'),tx('4D4d','¿En qué?',['4D4','Sí']),
+hd('4.E Condiciones de vida en el campo'),ar('4E1','¿Mejoraron las condiciones de vida gracias al proyecto (agua, energía, vivienda, caminos)?'),ar('4E2','¿Cree que conservar el bosque le genera beneficios económicos o sociales?')]}];
+// ===== ALMACENAMIENTO LOCAL (IndexedDB) =====
+const DB=new Promise(r=>{const q=indexedDB.open('pronefor',1);q.onupgradeneeded=()=>q.result.createObjectStore('r',{keyPath:'id'});q.onsuccess=()=>r(q.result)});
+const tr=async(m,f)=>{const d=await DB;return new Promise((res,rej)=>{const q=f(d.transaction('r',m).objectStore('r'));q.onsuccess=()=>res(q.result);q.onerror=rej})};
+const put=r=>tr('readwrite',s=>s.put(r)),all=()=>tr('readonly',s=>s.getAll()),del=i=>tr('readwrite',s=>s.delete(i));
+// ===== INTERFAZ =====
+const $=s=>document.querySelector(s),DEP={};let cur,tm;
+S.forEach(s=>s.f.forEach(F=>{if(F[4])DEP[F[0]]=F[4]}));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ok=s=>!s||(Array.isArray(cur.data[s[0]])?cur.data[s[0]].includes(s[1]):cur.data[s[0]]===s[1]);
+const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(t.h);t.h=setTimeout(()=>t.hidden=true,3500)};
+const COLS=[['poa','POA'],['act','Actividad planificada (según SIIF)'],['est','Estado de ejecución',['Ejecutada','Ejecutada parcialmente','En ejecución','No ejecutada']],['obs','Observaciones (cómo impacta en el bosque)']];
+function tabla(v){return (v||[{}]).map((r,i)=>`<div class=fila>${COLS.map(([k,l,o])=>`<label class=q>${l}</label>`+(o?`<select data-r=${i} data-c=${k}><option value="">Elegir…</option>${o.map(x=>`<option${r[k]===x?' selected':''}>${x}</option>`).join('')}</select>`:`<input type=text data-r=${i} data-c=${k} value="${esc(r[k])}">`)).join('')}<button type=button class="b x" data-delrow=${i}>Quitar</button></div>`).join('')+'<button type=button class="b g" data-addrow>+ Agregar actividad</button>'}
+function fld([id,l,ty,o]){const v=cur.data[id];let x;
+ if(ty==='H')return`<h3>${l}</h3>`;
+ if(ty==='T')return`<div class=f data-f="${id}"><div data-tabla>${tabla(cur.data.T2A)}</div></div>`;
+ if(ty==='c')x=`<div class=ch>${o.map(k=>`<label><input type=radio name="${id}" value="${k}"${v===k?' checked':''}>${k}</label>`).join('')}</div>`;
+ else if(ty==='m')x=`<div class=ch>${o.map(k=>`<label><input type=checkbox name="${id}" value="${k}"${(v||[]).includes(k)?' checked':''}>${k}</label>`).join('')}</div>`;
+ else if(ty==='s')x=`<select name="${id}"><option value="">Elegir…</option>${o.map(k=>`<option${v===k?' selected':''}>${k}</option>`).join('')}</select>`;
+ else if(ty==='a')x=`<textarea name="${id}">${esc(v)}</textarea>`;
+ else if(ty==='g')x=`<div class=row><input type=text name="${id}" placeholder="lat, long" value="${esc(v)}"><button type=button class="b g" data-gps="${id}">Ubicación</button></div>`;
+ else if(ty==='f')x=`<div class=row><label class="b g">Sacar foto<input type=file accept="image/*" capture=environment data-foto="${id}" hidden></label><label class="b">Elegir de galería<input type=file accept="image/*" data-foto="${id}" hidden></label></div><img class=pv ${v?`src="${v}"`:'hidden'}>`;
+ else x=`<input type=${{t:'text',n:'number',d:'date',h:'time'}[ty]} name="${id}" value="${esc(v)}"${ty==='n'?' inputmode=decimal step=any':''}>`;
+ return`<div class=f data-f="${id}"><label class=q>${l}</label>${x}</div>`}
+function vis(){document.querySelectorAll('[data-f]').forEach(e=>e.hidden=!ok(DEP[e.dataset.f]));document.querySelectorAll('details[data-s]').forEach(e=>e.hidden=!ok(S[e.dataset.s].s))}
+function draw(open){$('#form').innerHTML=S.map((s,i)=>`<details data-s=${i}${i===open?' open':''}><summary>${s.t}</summary><div class=body>${s.f.map(fld).join('')}</div></details>`).join('');vis()}
+function save(){clearTimeout(tm);tm=setTimeout(()=>{cur.actualizado=Date.now();put(cur)},500)}
+function nuevo(){const n=new Date();cur={id:'m'+n.getTime(),estado:'borrador',actualizado:n.getTime(),data:{'1E':n.toISOString().slice(0,10),'1Fi':n.toTimeString().slice(0,5),T2A:[{}]}};draw(0);vista('f')}
+function vista(v){$('#form').hidden=v!=='f';$('#bar').hidden=v!=='f';$('#list').hidden=v!=='l';$('#nf').className=v==='f'?'on':'';$('#nl').className=v==='l'?'on':'';if(v==='l')lista();scrollTo(0,0)}
+function limpiar(){document.querySelectorAll('[data-f]').forEach(e=>{if(e.hidden||e.closest('details').hidden)delete cur.data[e.dataset.f]})}
+const shrink=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const k=Math.min(1,1280/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.65))};i.src=URL.createObjectURL(f)});
+$('#form').addEventListener('input',e=>{const el=e.target;
+ if(el.dataset.r!==undefined){cur.data.T2A[el.dataset.r][el.dataset.c]=el.value;return save()}
+ const k=el.name;if(!k)return;cur.data[k]=el.type==='checkbox'?[...document.querySelectorAll(`[name="${k}"]:checked`)].map(x=>x.value):el.value;vis();save()});
+$('#form').addEventListener('change',async e=>{const el=e.target;if(!el.dataset.foto||!el.files[0])return;const u=await shrink(el.files[0]);cur.data[el.dataset.foto]=u;const im=el.closest('.f').querySelector('.pv');im.src=u;im.hidden=false;save()});
+$('#form').addEventListener('click',e=>{const b=e.target,d=b.dataset;
+ if(d.gps)return navigator.geolocation.getCurrentPosition(p=>{const v=`${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)} (±${Math.round(p.coords.accuracy)} m)`;cur.data[d.gps]=v;document.querySelector(`[name="${d.gps}"]`).value=v;save()},()=>toast('No se pudo obtener la ubicación. Activá el GPS o escribila a mano.'),{enableHighAccuracy:true,timeout:20000});
+ if('addrow'in d||d.delrow!==undefined){if('addrow'in d)cur.data.T2A.push({});else if(cur.data.T2A.length>1)cur.data.T2A.splice(d.delrow,1);b.closest('[data-tabla]').innerHTML=tabla(cur.data.T2A);save()}});
+async function lista(){const rs=(await all()).sort((a,b)=>b.actualizado-a.actualizado),np=rs.filter(r=>r.estado==='pendiente').length;
+ $('#list').innerHTML=`<button class="b g" data-a=sync ${np?'':'disabled'}>Sincronizar pendientes (${np})</button>`+(rs.length?rs.map(r=>`<div class=card><b>${esc(r.data['1A']||'Sin código de plan')}</b> <span class=tag>${r.estado}</span><br><small>${esc(r.data['1E']||'')} · ${esc(r.data['1La']||'')}</small><div class=row>${r.estado!=='enviado'?`<button class=b data-a=edit data-id=${r.id}>Editar</button>`:''}<button class="b g" data-a=json data-id=${r.id}>Descargar copia</button><button class="b x" data-a=del data-id=${r.id}>Eliminar</button></div></div>`).join(''):'<p>Todavía no hay monitoreos guardados en este teléfono.</p>')}
+$('#list').addEventListener('click',async e=>{const d=e.target.dataset;if(!d.a)return;
+ if(d.a==='sync')return sync();
+ const r=(await all()).find(x=>x.id===d.id);
+ if(d.a==='edit'){cur=r;draw(0);vista('f')}
+ if(d.a==='del'&&confirm('¿Eliminar este monitoreo del teléfono? No se puede deshacer.')){await del(d.id);lista()}
+ if(d.a==='json'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(r,null,1)],{type:'application/json'}));a.download=`monitoreo_${r.data['1A']||r.id}.json`;a.click()}});
+async function sync(){if(!CFG.URL)return toast('Falta configurar la URL de Apps Script en CFG.URL');if(!navigator.onLine)return toast('Sin conexión: se enviará cuando haya señal');
+ let n=0,er=0;for(const r of(await all()).filter(x=>x.estado==='pendiente')){const data={...r.data},fotos=[];
+  for(const k in data)if(String(data[k]).startsWith('data:image')){fotos.push({campo:k,mime:'image/jpeg',b64:data[k].split(',')[1]});delete data[k]}
+  try{const j=await(await fetch(CFG.URL,{method:'POST',body:JSON.stringify({clave:CFG.CLAVE,accion:'monitoreo_app',id:r.id,datos:data,fotos})})).json();if(j.ok){r.estado='enviado';await put(r);n++}else er++}catch{er++}}
+ toast(`Enviados: ${n}${er?` · con error: ${er} (quedan pendientes)`:''}`);if(!$('#list').hidden)lista()}
+$('#bd').onclick=()=>{limpiar();cur.actualizado=Date.now();put(cur);toast('Borrador guardado en el teléfono')};
+$('#bf').onclick=async()=>{limpiar();if(!cur.data['1A']||!cur.data['1E'])return toast('Completá el código del plan (1.A) y la fecha (1.E)');cur.estado='pendiente';cur.actualizado=Date.now();await put(cur);toast('Guardado. Se enviará al haber conexión.');vista('l');if(navigator.onLine&&CFG.URL)sync()};
+$('#bn').onclick=()=>confirm('¿Empezar un monitoreo nuevo? El actual queda guardado como borrador.')&&(put(cur),nuevo());
+$('#nf').onclick=()=>vista('f');$('#nl').onclick=()=>{limpiar();put(cur);vista('l')};
+const net=()=>{$('#net').textContent=navigator.onLine?'En línea':'Sin conexión'};addEventListener('online',()=>{net();sync()});addEventListener('offline',net);net();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+(async()=>{const b=(await all()).filter(r=>r.estado==='borrador').sort((a,b)=>b.actualizado-a.actualizado)[0];if(b){cur=b;draw(0)}else nuevo()})();
+</script></body></html>
