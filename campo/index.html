@@ -1,0 +1,52 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Monitoreos de campo · ProNEFor</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--v:#223A2C;--t:#8A5A34;--p:#F1EFE4;--l:#D9D4C0}
+*{box-sizing:border-box}body{margin:0;background:var(--p);color:#1d2620;font:16px/1.45 "IBM Plex Sans",system-ui,sans-serif}
+header{background:var(--v);color:var(--p);padding:22px 16px}header div{max-width:980px;margin:auto}
+h1{font:600 26px Fraunces,Georgia,serif;margin:2px 0}small{opacity:.8}a{color:inherit}
+main{max-width:980px;margin:auto;padding:14px 16px 40px}
+.k{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.k div{background:#fff;border:1px solid var(--l);border-radius:8px;padding:12px}.k b{display:block;font:600 28px Fraunces,Georgia,serif;color:var(--v)}
+.f{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.f input,.f select{flex:1 1 200px;padding:10px;border:1px solid #b8b29a;border-radius:6px;font:inherit;background:#fff}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.c{background:#fff;border:1px solid var(--l);border-radius:8px;padding:14px}.c h3{margin:0;font:600 18px Fraunces,Georgia,serif;color:var(--v)}
+.c p{margin:4px 0;font-size:14px}.m{color:#5b5a4d}
+.t{display:inline-block;font-size:12px;padding:2px 9px;border-radius:10px;margin:4px 4px 0 0;background:var(--l)}.w{background:#f0d9c4;color:#6b3a10;font-weight:600}
+#e{padding:20px;text-align:center}
+</style></head><body>
+<header><div><small>Programa Nacional de Extensión Forestal</small><h1>Monitoreos de campo</h1><small>Cargados desde la app · <a href="../">Volver al inicio</a></small></div></header>
+<main>
+<div class="k" id="k"></div>
+<div class="f"><input id="q" type="search" placeholder="Buscar por plan, POA, localidad o departamento"><select id="r"><option value="">Todas las regiones fitogeográficas</option></select></div>
+<div class="g" id="g"></div><div id="e">Cargando…</div>
+</main>
+<script>
+const URL_SCRIPT='https://script.google.com/macros/s/AKfycbySI-cSGZcdzF6RG8t2SpWaPCBgbXeSb0AdhWmNZxT3wrXbke1BHRXYlQys06_55lPl/exec'; // pegá acá la URL /exec del Apps Script (la misma que usa la app)
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fecha=s=>{const m=/^(\d{4})-(\d\d)-(\d\d)/.exec(s||'');return m?`${m[3]}/${m[2]}/${m[1]}`:''};
+let D=[];
+function alertas(r){const a=[];if(r['3B4a']==='Sí')a.push('Evidencia de tala');if(r['3B4b']==='Sí')a.push('Ganado en el bosque');if(r['3B4f']==='Sí')a.push('Incendio reciente');if(r['3B5a']==='Presencia')a.push('Flora exótica invasora');return a}
+function pinta(){
+  const q=$('#q').value.toLowerCase().trim(),rg=$('#r').value;
+  const L=D.filter(r=>(!rg||r['1M']===rg)&&(!q||['1A','1B','1La','1Lb'].some(k=>String(r[k]||'').toLowerCase().includes(q))));
+  $('#g').innerHTML=L.map(r=>{const a=alertas(r);return`<div class=c><h3>Plan ${esc(r['1A']||'s/d')}</h3>
+  <p class=m>POA: ${esc(r['1B']||'s/d')}</p><p><b>${fecha(r['1E']||r.Recibido)}</b>${r['1Es']?' · '+esc(r['1Es']):''}</p>
+  <p>${esc([r['1La'],r['1Lb']].filter(Boolean).join(', '))}${r['1M']?' · '+esc(r['1M']):''}</p>
+  <div>${r['1H']?`<span class=t>Titular ${esc(r['1H']).toLowerCase()}</span>`:''}${r['1J']?`<span class=t>Resp. técnico ${esc(r['1J']).toLowerCase()}</span>`:''}${r['2C']==='Sí'?'<span class=t>Con readecuación</span>':''}</div>
+  <div>${a.map(x=>`<span class="t w">${x}</span>`).join('')}</div>
+  <div>${String(r.MOD||'').split('; ').filter(Boolean).map(x=>`<span class=t>${esc(x)}</span>`).join('')}</div></div>`}).join('');
+  $('#e').textContent=L.length?'':(D.length?'Ningún monitoreo coincide con la búsqueda.':'Todavía no hay monitoreos cargados desde la app.');
+}
+fetch(URL_SCRIPT+'?accion=app').then(r=>r.json()).then(j=>{
+  if(!j.ok)throw new Error(j.error);
+  D=j.registros.sort((a,b)=>String(b['1E']||b.Recibido).localeCompare(String(a['1E']||a.Recibido)));
+  const rs=[...new Set(D.map(r=>r['1M']).filter(Boolean))].sort();
+  $('#r').innerHTML+=rs.map(x=>`<option>${esc(x)}</option>`).join('');
+  const planes=new Set(D.map(r=>r['1A']).filter(Boolean)).size,con=D.filter(r=>alertas(r).length).length;
+  $('#k').innerHTML=[[D.length,'monitoreos cargados'],[planes,'planes monitoreados'],[con,'con alguna alerta'],[fecha(D[0]&&(D[0]['1E']||D[0].Recibido))||'–','último monitoreo']].map(([n,t])=>`<div><b>${n}</b>${t}</div>`).join('');
+  pinta()}).catch(e=>{$('#e').textContent='No se pudieron cargar los datos. '+(URL_SCRIPT?'':'Falta configurar URL_SCRIPT.')});
+$('#q').oninput=pinta;$('#r').onchange=pinta;
+</script></body></html>
