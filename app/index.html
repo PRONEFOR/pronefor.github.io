@@ -21,7 +21,7 @@ textarea{min-height:76px}.row{display:flex;gap:8px}
 .ch{display:flex;flex-wrap:wrap;gap:6px}.ch label{border:1px solid #b8b29a;border-radius:18px;padding:8px 13px;background:#fff;font-size:15px}
 .ch input{display:none}.ch label:has(input:checked){background:var(--v);color:#fff;border-color:var(--v)}
 .b{padding:11px 14px;border:0;border-radius:6px;background:var(--t);color:#fff;font:inherit;font-weight:600}.g{background:var(--v)}.x{background:#8f2d2d}
-.pv{display:block;max-width:100%;margin-top:8px;border-radius:6px}
+.gal{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.th{position:relative;width:calc(50% - 4px)}.th img{display:block;width:100%;border-radius:6px}.th .b{position:absolute;top:4px;right:4px;padding:1px 10px;border-radius:14px;font-size:18px}
 .fila{border:1px solid var(--l);border-radius:6px;padding:10px;margin:8px 0;background:var(--p)}.fila>*{margin:4px 0}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--l);padding:10px 10px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:5}.bar .b{flex:1}
 .card{background:#fff;border:1px solid var(--l);border-radius:8px;padding:12px;margin:10px 0}.card .row{flex-wrap:wrap;margin-top:8px}
@@ -35,7 +35,7 @@ textarea{min-height:76px}.row{display:flex;gap:8px}
 <div id="toast" hidden></div>
 <script>
 // ===== CONFIGURACIÓN =====
-const CFG={URL:'https://script.google.com/macros/s/AKfycbySI-cSGZcdzF6RG8t2SpWaPCBgbXeSb0AdhWmNZxT3wrXbke1BHRXYlQys06_55lPl/exec',CLAVE:'PRONEFOR2026'}; // URL = dirección de la implementación web de Apps Script
+const CFG={URL:'',CLAVE:'PRONEFOR2026'}; // URL = dirección de la implementación web de Apps Script
 // ===== ESQUEMA DEL FORMULARIO =====
 const YN=['Sí','No'],ZN=['Sí','No','NS/NC'],PA=['Presencia','Ausencia'],FI=['Formal','Informal'];
 const tx=(i,l,s)=>[i,l,'t',0,s],nu=(i,l,s)=>[i,l,'n',0,s],dt=(i,l,s)=>[i,l,'d',0,s],hr=(i,l,s)=>[i,l,'h',0,s],ar=(i,l,s)=>[i,l,'a',0,s],gp=(i,l,s)=>[i,l,'g',0,s],fo=(i,l,s)=>[i,l,'f',0,s];
@@ -46,7 +46,7 @@ const REG=['Yungas','Chaco semiárido','Chaco serrano','Chaco húmedo','Chaco á
 const PF=['Miel','Frutos del monte','Aromáticas','Medicinales','Cosméticas','Tintóreas','Fibras textiles (chaguar, palma caranday, etc.)','Ornamentales (helechos, orquídeas, cactus, palmeras, etc.)','Industrial (goma brea, etc.)','Hongos','Productos de fauna'];
 const AF='Aprovechamiento forestal (AF)',SS='Silvopastoril (SSP) y MBGI',RE='Recuperación (REC)',CO='Conservación (CON)',PN='Productos no maderables (PNMyS)';
 const IND=(p,s)=>[pa(p+'1','Presencia/ausencia de ganado o animales',s),pa(p+'2','Bosteo reciente',s),pa(p+'3','Renovales',s),pa(p+'4','Ramoneo en renovales',s),pa(p+'5','Huellas, caminos o pisadas del ganado (sobrepisoteo)',s)];
-const sitio=(n,tit)=>[hd(tit),fo('F'+n+'f','Foto panorámica'),gp('F'+n+'g','Coordenadas GPS'),ar('F'+n+'d','Descripción del sitio'),
+const sitio=(n,tit)=>[hd(tit),fo('F'+n+'f','Fotos panorámicas (podés cargar varias)'),gp('F'+n+'g','Coordenadas GPS'),ar('F'+n+'d','Descripción del sitio'),
  yn('F'+n+'h','Suelo cubierto por hojarasca o mantillo'),pa('F'+n+'e','Herbáceo'),pa('F'+n+'s','Sotobosque'),pa('F'+n+'r','Regeneración'),pa('F'+n+'o','Dosel'),ch('F'+n+'a','Altura dominante promedio',['Menos de 3 m','Entre 3 y 7 m','Más de 7 m'])];
 const S=[
 {t:'1. Datos generales',f:[tx('1A','Código del plan en el SIIF'),tx('1B','Código/s de POA en el SIIF y año de convocatoria (separar con coma)'),
@@ -119,6 +119,7 @@ const ok=s=>!s||(Array.isArray(cur.data[s[0]])?cur.data[s[0]].includes(s[1]):cur
 const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(t.h);t.h=setTimeout(()=>t.hidden=true,3500)};
 const COLS=[['poa','POA'],['act','Actividad planificada (según SIIF)'],['est','Estado de ejecución',['Ejecutada','Ejecutada parcialmente','En ejecución','No ejecutada']],['obs','Observaciones (cómo impacta en el bosque)']];
 function tabla(v){return (v||[{}]).map((r,i)=>`<div class=fila>${COLS.map(([k,l,o])=>`<label class=q>${l}</label>`+(o?`<select data-r=${i} data-c=${k}><option value="">Elegir…</option>${o.map(x=>`<option${r[k]===x?' selected':''}>${x}</option>`).join('')}</select>`:`<input type=text data-r=${i} data-c=${k} value="${esc(r[k])}">`)).join('')}<button type=button class="b x" data-delrow=${i}>Quitar</button></div>`).join('')+'<button type=button class="b g" data-addrow>+ Agregar actividad</button>'}
+const gal=(id,v)=>[].concat(v||[]).map((u,i)=>`<div class=th><img src="${u}"><button type=button class="b x" data-delfoto="${id}" data-i=${i}>×</button></div>`).join('');
 function fld([id,l,ty,o]){const v=cur.data[id];let x;
  if(ty==='H')return`<h3>${l}</h3>`;
  if(ty==='T')return`<div class=f data-f="${id}"><div data-tabla>${tabla(cur.data.T2A)}</div></div>`;
@@ -127,7 +128,7 @@ function fld([id,l,ty,o]){const v=cur.data[id];let x;
  else if(ty==='s')x=`<select name="${id}"><option value="">Elegir…</option>${o.map(k=>`<option${v===k?' selected':''}>${k}</option>`).join('')}</select>`;
  else if(ty==='a')x=`<textarea name="${id}">${esc(v)}</textarea>`;
  else if(ty==='g')x=`<div class=row><input type=text name="${id}" placeholder="lat, long" value="${esc(v)}"><button type=button class="b g" data-gps="${id}">Ubicación</button></div>`;
- else if(ty==='f')x=`<div class=row><label class="b g">Sacar foto<input type=file accept="image/*" capture=environment data-foto="${id}" hidden></label><label class="b">Elegir de galería<input type=file accept="image/*" data-foto="${id}" hidden></label></div><img class=pv ${v?`src="${v}"`:'hidden'}>`;
+ else if(ty==='f')x=`<div class=row><label class="b g">Sacar foto<input type=file accept="image/*" capture=environment data-foto="${id}" hidden></label><label class="b">Elegir de galería<input type=file accept="image/*" multiple data-foto="${id}" hidden></label></div><div class=gal data-gal="${id}">${gal(id,v)}</div>`;
  else x=`<input type=${{t:'text',n:'number',d:'date',h:'time'}[ty]} name="${id}" value="${esc(v)}"${ty==='n'?' inputmode=decimal step=any':''}>`;
  return`<div class=f data-f="${id}"><label class=q>${l}</label>${x}</div>`}
 function vis(){document.querySelectorAll('[data-f]').forEach(e=>e.hidden=!ok(DEP[e.dataset.f]));document.querySelectorAll('details[data-s]').forEach(e=>e.hidden=!ok(S[e.dataset.s].s))}
@@ -140,8 +141,9 @@ const shrink=f=>new Promise(r=>{const i=new Image();i.onload=()=>{const k=Math.m
 $('#form').addEventListener('input',e=>{const el=e.target;
  if(el.dataset.r!==undefined){cur.data.T2A[el.dataset.r][el.dataset.c]=el.value;return save()}
  const k=el.name;if(!k)return;cur.data[k]=el.type==='checkbox'?[...document.querySelectorAll(`[name="${k}"]:checked`)].map(x=>x.value):el.value;vis();save()});
-$('#form').addEventListener('change',async e=>{const el=e.target;if(!el.dataset.foto||!el.files[0])return;const u=await shrink(el.files[0]);cur.data[el.dataset.foto]=u;const im=el.closest('.f').querySelector('.pv');im.src=u;im.hidden=false;save()});
+$('#form').addEventListener('change',async e=>{const el=e.target;if(!el.dataset.foto||!el.files.length)return;const id=el.dataset.foto,a=[].concat(cur.data[id]||[]),fs=[...el.files];el.value='';toast('Procesando foto…');for(const f of fs)a.push(await shrink(f));cur.data[id]=a;document.querySelector(`[data-gal="${id}"]`).innerHTML=gal(id,a);save();toast(a.length+(a.length===1?' foto cargada':' fotos cargadas'))});
 $('#form').addEventListener('click',e=>{const b=e.target,d=b.dataset;
+ if(d.delfoto){const a=cur.data[d.delfoto];a.splice(d.i,1);document.querySelector(`[data-gal="${d.delfoto}"]`).innerHTML=gal(d.delfoto,a);return save()}
  if(d.gps)return navigator.geolocation.getCurrentPosition(p=>{const v=`${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)} (±${Math.round(p.coords.accuracy)} m)`;cur.data[d.gps]=v;document.querySelector(`[name="${d.gps}"]`).value=v;save()},()=>toast('No se pudo obtener la ubicación. Activá el GPS o escribila a mano.'),{enableHighAccuracy:true,timeout:20000});
  if('addrow'in d||d.delrow!==undefined){if('addrow'in d)cur.data.T2A.push({});else if(cur.data.T2A.length>1)cur.data.T2A.splice(d.delrow,1);b.closest('[data-tabla]').innerHTML=tabla(cur.data.T2A);save()}});
 async function lista(){const rs=(await all()).sort((a,b)=>b.actualizado-a.actualizado),np=rs.filter(r=>r.estado==='pendiente').length;
@@ -154,7 +156,7 @@ $('#list').addEventListener('click',async e=>{const d=e.target.dataset;if(!d.a)r
  if(d.a==='json'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(r,null,1)],{type:'application/json'}));a.download=`monitoreo_${r.data['1A']||r.id}.json`;a.click()}});
 async function sync(){if(!CFG.URL)return toast('Falta configurar la URL de Apps Script en CFG.URL');if(!navigator.onLine)return toast('Sin conexión: se enviará cuando haya señal');
  let n=0,er=0;for(const r of(await all()).filter(x=>x.estado==='pendiente')){const data={...r.data},fotos=[];
-  for(const k in data)if(String(data[k]).startsWith('data:image')){fotos.push({campo:k,mime:'image/jpeg',b64:data[k].split(',')[1]});delete data[k]}
+  for(const k in data){const a=[].concat(data[k]);if(a.length&&String(a[0]).startsWith('data:image')){a.forEach(u=>fotos.push({campo:k,mime:'image/jpeg',b64:u.split(',')[1]}));delete data[k]}}
   try{const j=await(await fetch(CFG.URL,{method:'POST',body:JSON.stringify({clave:CFG.CLAVE,accion:'monitoreo_app',id:r.id,datos:data,fotos})})).json();if(j.ok){r.estado='enviado';await put(r);n++}else er++}catch{er++}}
  toast(`Enviados: ${n}${er?` · con error: ${er} (quedan pendientes)`:''}`);if(!$('#list').hidden)lista()}
 $('#bd').onclick=()=>{limpiar();cur.actualizado=Date.now();put(cur);toast('Borrador guardado en el teléfono')};
